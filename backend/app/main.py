@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Loan Underwriting API is running! Use /predict or /explain."
+    return "Loan Underwriting API is running! Use /predict or /explain ."
 
 @app.route("/predict", methods=["POST"])
 def predict():
