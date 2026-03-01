@@ -1,85 +1,93 @@
-PROJECT 91 – Intelligent Loan Underwriting & Credit Risk Assessment Platform
-Progress Report
+============================================================
+PROJECT 91
+Intelligent Loan Underwriting & Credit Risk Assessment
+============================================================
 
-Date: 28 Feb 2026
+Date: 28-Feb-2026
+Author: [Your Name / Team]
 
+------------------------------------------------------------
+1. INTRODUCTION
+------------------------------------------------------------
+Project 91 is an AI-powered loan underwriting platform designed to:
+- Make fast, fair, and explainable credit decisions
+- Reduce financial risk
+- Increase financial inclusion
+- Ensure regulatory compliance
 
-1. Overview
+Current Progress: Backend development completed, AI model integrated, API tested.
 
-This document summarizes the progress of Project 91, an AI-powered loan underwriting and credit risk assessment platform. The backend has been fully implemented, tested, and is ready to integrate with the frontend.
+------------------------------------------------------------
+2. BACKEND DEVELOPMENT
+------------------------------------------------------------
 
-2. Completed Backend Work
+2.1 Model Development
+- Model: XGBoost classifier
+- Hyperparameters optimized
+- Accuracy: 86.56%
+- ROC-AUC: 0.9424
+- Classification report shows balanced precision/recall
+- Model saved as: models/risk_model_optimized.pkl
 
-Model Development
+2.2 Explainability
+- SHAP integrated for feature contribution explanations
+- Generates plain English AI summaries
+- Example summary:
+  "Loan approved because applicant’s low loan-to-income ratio
+   and long employment history reduce default risk."
 
-Trained XGBoost classifier on applicant financial and behavioral data.
+2.3 API Development
+- Endpoint: POST /predict
+- Input: JSON applicant data
+- Output: JSON response with:
+  {
+    "decision": "Approved",
+    "probability_of_default": 0.18,
+    "summary": "Loan approved because applicant's low loan-to-income ratio ..."
+  }
+- API tested with Postman & terminal
 
-Optimized hyperparameters to achieve:
+2.4 Project Structure
+backend/
+├── app/
+│   ├── main.py
+│   ├── decision_engine.py
+│   ├── explainability.py
+│   └── model_loader.py
+├── models/
+│   └── risk_model_optimized.pkl
+└── training/
+    └── train_model.py
 
-Accuracy: 86.56%
+------------------------------------------------------------
+3. BACKEND TESTING
+------------------------------------------------------------
+- Postman: Verified API responses & explainability
+- Terminal: Flask server runs without errors
+- SHAP explanations returned correctly
 
-ROC-AUC: 0.9424
+Sample Output:
+{
+  "decision": "Approved",
+  "probability_of_default": 0.18,
+  "summary": "Loan approved because applicant's low loan-to-income ratio ..."
+}
 
-Balanced precision and recall for creditworthy applicants.
+------------------------------------------------------------
+4. NEXT STEPS
+------------------------------------------------------------
+1. Frontend Development
+   - Single-page dark-themed dashboard
+   - Loan form + AI Decision + Explainability summary
+2. Docker Integration
+   - Containerize backend (later frontend)
+   - Enable cloud deployment
+3. End-to-End Testing
+   - Form submission → API → AI decision + explainability display
 
-Model saved as risk_model_optimized.pkl.
-
-Explainability
-
-Integrated SHAP to generate feature contribution explanations.
-
-Backend can provide plain English AI summaries for decisions.
-
-API Development
-
-POST /predict endpoint implemented using Flask.
-
-Accepts applicant data in JSON.
-
-Returns JSON with:
-
-Decision: Approved / Rejected
-
-Probability of Default (numeric)
-
-AI explanation summary (text)
-
-3. Backend Testing
-
-Postman API Tests
-
-Successfully tested /predict endpoint with sample JSON inputs.
-
-Confirmed proper responses:
-
-Local Terminal Testing
-
-Verified Flask server runs without errors.
-
-SHAP explanations returned correctly.
-
-4. Next Steps
-
-Frontend Development
-
-Build a dark-themed, single-page dashboard.
-
-Include:
-
-Loan Application Form
-
-AI Decision Card
-
-Explainability Summary
-
-Connect form to /predict API for live testing.
-
-Docker Integration
-
-Containerize backend and frontend for deployment.
-
-Enable consistent environment and easy cloud deployment.
-
-End-to-End Testing
-
-Full system integration testing: form submission → backend prediction → display decision & explainability.
+------------------------------------------------------------
+5. NOTES / OBSERVATIONS
+------------------------------------------------------------
+- Backend & model are production-ready
+- Explainability fully functional via SHAP
+- Dataset and .pkl files local; can be added to deployment image
