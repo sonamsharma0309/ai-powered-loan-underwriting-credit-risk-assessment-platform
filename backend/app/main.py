@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from decision_engine import make_decision
 from explainability import explain_decision
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app) 
 
 @app.route("/", methods=["GET"])
 def home():
