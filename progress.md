@@ -1,13 +1,14 @@
 
-PROJECT 91
-Intelligent Loan Underwriting & Credit Risk Assessment
+# PROJECT 91
+## Intelligent Loan Underwriting & Credit Risk Assessment
 
+---
 
-Date: 28-Feb-2026
+## Date: 28-Feb-2026
 Author: Shivangi Chaurasia
 
 ------------------------------------------------------------
-1. INTRODUCTION
+### 1. INTRODUCTION
 ------------------------------------------------------------
 Project 91 is an AI-powered loan underwriting platform designed to:
 - Make fast, fair, and explainable credit decisions
@@ -16,6 +17,8 @@ Project 91 is an AI-powered loan underwriting platform designed to:
 - Ensure regulatory compliance
 
 Current Progress: Backend development completed, AI model integrated, API tested.
+
+---
 
 ------------------------------------------------------------
 2. BACKEND DEVELOPMENT
