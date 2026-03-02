@@ -9,3 +9,4 @@ shap
 python-multipart
 flask
 flask-cors
+gunicorn
