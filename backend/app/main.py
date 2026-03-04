@@ -3,11 +3,12 @@ from flask_cors import CORS
 import joblib
 import pandas as pd
 import sqlite3
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-model = joblib.load("models/risk_model_optimized.pkl")
+model = joblib.load("../models/risk_model_optimized.pkl")
 
 
 def get_db():
@@ -288,4 +289,5 @@ def explain():
 # -----------------------------
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
