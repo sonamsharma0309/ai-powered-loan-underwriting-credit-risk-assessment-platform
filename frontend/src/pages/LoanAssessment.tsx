@@ -15,13 +15,15 @@ const [risk,setRisk]=useState(0)
 const [decision,setDecision]=useState("")
 const [explanation,setExplanation]=useState<string[]>([])
 
+const API = "https://ai-powered-loan-underwriting-credit-risk-3at2.onrender.com/";
+
 const handleChange=(e:any)=>{
 setForm({...form,[e.target.name]:e.target.value})
 }
 
 const runAssessment=async()=>{
 
-const res=await fetch("http://localhost:5000/predict",{
+const res=await fetch(`${API}/predict`,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify(form)
@@ -32,7 +34,7 @@ const data=await res.json()
 setRisk(data.risk_score)
 setDecision(data.decision)
 
-const exp=await fetch("http://localhost:5000/explain",{
+const exp=await fetch(`${API}/explain`,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify(form)
