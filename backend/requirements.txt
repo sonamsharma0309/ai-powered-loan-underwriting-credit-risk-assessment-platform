@@ -26,3 +26,6 @@ psycopg2-binary
 # utilities
 python-dotenv
 pydantic
+
+pytest
+requests
