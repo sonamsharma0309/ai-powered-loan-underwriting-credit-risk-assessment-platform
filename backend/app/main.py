@@ -7,6 +7,8 @@ import joblib
 import pandas as pd
 import sqlite3
 
+from model_metrics import get_model_metrics
+
 app = Flask(__name__)
 CORS(app)
 
@@ -299,6 +301,18 @@ def analytics():
         "rejected":rejected,
         "avg_risk":avg_risk or 0
     })
+
+
+# -----------------------------
+# MODEL METRICS
+# -----------------------------
+
+@app.route("/metrics")
+def metrics():
+
+    metrics_data = get_model_metrics()
+
+    return jsonify(metrics_data)
 
 
 if __name__ == "__main__":
