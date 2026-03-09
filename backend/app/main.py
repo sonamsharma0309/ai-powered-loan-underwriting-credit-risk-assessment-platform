@@ -6,22 +6,33 @@ import bcrypt
 import joblib
 import pandas as pd
 import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
 from model_metrics import get_model_metrics
 
 app = Flask(__name__)
 CORS(app)
 
-# Rate limiter
 limiter = Limiter(get_remote_address, app=app)
 
 model = joblib.load("models/risk_model_optimized.pkl")
 
 
 # -----------------------------
+# SECURITY HEADERS
+# -----------------------------
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
+
+# -----------------------------
 # DATABASE
 # -----------------------------
-
 def get_db():
     conn = sqlite3.connect("creditai.db")
     conn.row_factory = sqlite3.Row
@@ -29,37 +40,8 @@ def get_db():
 
 
 # -----------------------------
-# INPUT VALIDATION
-# -----------------------------
-
-def validate_prediction_input(data):
-
-    required = ["name", "age", "income", "loanAmount", "creditHistory"]
-
-    for field in required:
-        if field not in data:
-            return False, f"{field} missing"
-
-    try:
-        if float(data["income"]) <= 0:
-            return False, "Income must be positive"
-
-        if float(data["loanAmount"]) <= 0:
-            return False, "Loan amount must be positive"
-
-        if float(data["age"]) < 18:
-            return False, "Age must be above 18"
-
-    except:
-        return False, "Invalid input format"
-
-    return True, None
-
-
-# -----------------------------
 # DATABASE INIT
 # -----------------------------
-
 def init_db():
 
     conn = get_db()
@@ -99,7 +81,6 @@ def home():
 # -----------------------------
 # REGISTER
 # -----------------------------
-
 @app.route("/register", methods=["POST"])
 @limiter.limit("10 per minute")
 def register():
@@ -109,7 +90,10 @@ def register():
     email = data.get("email")
     password = data.get("password")
 
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    if not email or not password:
+        return jsonify({"success": False, "message": "Email and password required"}), 400
+
+    hashed_password = generate_password_hash(password)
 
     conn = get_db()
 
@@ -124,7 +108,7 @@ def register():
 
     conn.execute(
         "INSERT INTO users(email,password) VALUES (?,?)",
-        (email, hashed)
+        (email, hashed_password)
     )
 
     conn.commit()
@@ -136,7 +120,6 @@ def register():
 # -----------------------------
 # LOGIN
 # -----------------------------
-
 @app.route("/login", methods=["POST"])
 @limiter.limit("10 per minute")
 def login():
@@ -155,7 +138,7 @@ def login():
 
     conn.close()
 
-    if user and bcrypt.checkpw(password.encode(), user["password"]):
+    if user and check_password_hash(user["password"], password):
         return jsonify({
             "success": True,
             "token": "creditai-user"
@@ -170,27 +153,33 @@ def login():
 # -----------------------------
 # LOAN PREDICTION
 # -----------------------------
-
 @app.route("/predict", methods=["POST"])
 @limiter.limit("20 per minute")
 def predict():
 
     data = request.json
 
-    valid, message = validate_prediction_input(data)
+    name = data.get("name")
+    age = data.get("age")
+    income = data.get("income")
+    loan = data.get("loanAmount")
+    credit = data.get("creditHistory")
 
-    if not valid:
-        return jsonify({"error": message}), 400
+    if not name or age is None or income is None or loan is None or credit is None:
+        return jsonify({"error": "Missing required fields"}), 400
 
-    name = data["name"]
-    age = float(data["age"])
-    income = float(data["income"])
-    loan = float(data["loanAmount"])
-    credit = float(data["creditHistory"])
+    age = float(age)
+    income = float(income)
+    loan = float(loan)
+    credit = float(credit)
+
+    if age < 18:
+        return jsonify({"error": "Applicant must be at least 18"}), 400
+
+    if income <= 0 or loan <= 0:
+        return jsonify({"error": "Income and loan must be positive"}), 400
 
     loan_percent_income = loan / income
-    loan_to_income_ratio = loan / income
-    interest_income_ratio = credit / income
 
     row = {
         "person_age": age,
@@ -200,36 +189,37 @@ def predict():
         "loan_int_rate": credit,
         "loan_percent_income": loan_percent_income,
         "cb_person_cred_hist_length": 5,
-        "loan_to_income_ratio": loan_to_income_ratio,
-        "interest_income_ratio": interest_income_ratio,
+        "loan_to_income_ratio": loan_percent_income,
+        "interest_income_ratio": credit / income,
 
-        "person_home_ownership_OTHER":0,
-        "person_home_ownership_OWN":0,
-        "person_home_ownership_RENT":1,
+        "person_home_ownership_OTHER": 0,
+        "person_home_ownership_OWN": 0,
+        "person_home_ownership_RENT": 1,
 
-        "loan_intent_EDUCATION":0,
-        "loan_intent_HOMEIMPROVEMENT":0,
-        "loan_intent_MEDICAL":0,
-        "loan_intent_PERSONAL":1,
-        "loan_intent_VENTURE":0,
+        "loan_intent_EDUCATION": 0,
+        "loan_intent_HOMEIMPROVEMENT": 0,
+        "loan_intent_MEDICAL": 0,
+        "loan_intent_PERSONAL": 1,
+        "loan_intent_VENTURE": 0,
 
-        "loan_grade_B":0,
-        "loan_grade_C":0,
-        "loan_grade_D":0,
-        "loan_grade_E":0,
-        "loan_grade_F":0,
-        "loan_grade_G":0,
+        "loan_grade_B": 0,
+        "loan_grade_C": 0,
+        "loan_grade_D": 0,
+        "loan_grade_E": 0,
+        "loan_grade_F": 0,
+        "loan_grade_G": 0,
 
-        "cb_person_default_on_file_Y":0
+        "cb_person_default_on_file_Y": 0
     }
 
     df = pd.DataFrame([row])
 
-    prediction = int(model.predict(df)[0])
     prob = float(model.predict_proba(df)[0][1])
 
+    prediction = 1 if prob >= 0.4 else 0
+
     risk_score = round(prob * 100, 2)
-    approval_probability = round((1-prob)*100, 2)
+    approval_probability = round((1 - prob) * 100, 2)
 
     decision = "Approved" if prediction == 0 else "Rejected"
 
@@ -237,23 +227,22 @@ def predict():
 
     conn.execute(
         "INSERT INTO applications(name,age,income,loan,decision,risk) VALUES (?,?,?,?,?,?)",
-        (name,age,income,loan,decision,risk_score)
+        (name, age, income, loan, decision, risk_score)
     )
 
     conn.commit()
     conn.close()
 
     return jsonify({
-        "risk_score":risk_score,
-        "approval_probability":approval_probability,
-        "decision":decision
+        "risk_score": risk_score,
+        "approval_probability": approval_probability,
+        "decision": decision
     })
 
 
 # -----------------------------
 # APPLICATION LIST
 # -----------------------------
-
 @app.route("/applications")
 def applications():
 
@@ -271,15 +260,12 @@ def applications():
 # -----------------------------
 # ANALYTICS
 # -----------------------------
-
 @app.route("/analytics")
 def analytics():
 
     conn = get_db()
 
-    total = conn.execute(
-        "SELECT COUNT(*) as c FROM applications"
-    ).fetchone()["c"]
+    total = conn.execute("SELECT COUNT(*) as c FROM applications").fetchone()["c"]
 
     approved = conn.execute(
         "SELECT COUNT(*) as c FROM applications WHERE decision='Approved'"
@@ -296,24 +282,22 @@ def analytics():
     conn.close()
 
     return jsonify({
-        "total":total,
-        "approved":approved,
-        "rejected":rejected,
-        "avg_risk":avg_risk or 0
+        "total": total,
+        "approved": approved,
+        "rejected": rejected,
+        "avg_risk": avg_risk or 0
     })
 
 
 # -----------------------------
 # MODEL METRICS
 # -----------------------------
-
 @app.route("/metrics")
 def metrics():
-
     metrics_data = get_model_metrics()
-
     return jsonify(metrics_data)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
