@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 from model_metrics import get_model_metrics, get_fairness_metrics
+from explainability import explain_decision   # ⭐ NEW IMPORT
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,12 @@ CORS(app)
 limiter = Limiter(get_remote_address, app=app)
 
 model = joblib.load("models/risk_model_optimized.pkl")
+
+# -----------------------------
+# DRIFT TRACKING
+# -----------------------------
+training_income_avg = 50000
+live_income_values = []
 
 
 # -----------------------------
@@ -97,6 +104,18 @@ init_db()
 @app.route("/")
 def home():
     return jsonify({"message": "CreditAI Backend Running"})
+
+
+# -----------------------------
+# SYSTEM HEALTH CHECK
+# -----------------------------
+@app.route("/health")
+def health():
+
+    return jsonify({
+        "status": "running",
+        "model_loaded": True
+    })
 
 
 # -----------------------------
@@ -196,6 +215,9 @@ def predict():
     loan = float(loan)
     credit = float(credit)
 
+    # collect live data for drift monitoring
+    live_income_values.append(income)
+
     if age < 18:
         return jsonify({"error": "Applicant must be at least 18"}), 400
 
@@ -264,62 +286,16 @@ def predict():
 
 
 # -----------------------------
-# APPLICATION LIST (ADMIN)
+# AI EXPLANATION (UPDATED)
 # -----------------------------
-@app.route("/applications")
-def applications():
+@app.route("/explain", methods=["POST"])
+def explain():
 
-    email = request.args.get("email")
+    data = request.json
 
-    if not is_admin(email):
-        return jsonify({"error": "Admin access required"}), 403
+    explanation = explain_decision(data)
 
-    conn = get_db()
-
-    rows = conn.execute(
-        "SELECT * FROM applications ORDER BY id DESC"
-    ).fetchall()
-
-    conn.close()
-
-    return jsonify([dict(row) for row in rows])
-
-
-# -----------------------------
-# ANALYTICS (ADMIN)
-# -----------------------------
-@app.route("/analytics")
-def analytics():
-
-    email = request.args.get("email")
-
-    if not is_admin(email):
-        return jsonify({"error": "Admin access required"}), 403
-
-    conn = get_db()
-
-    total = conn.execute("SELECT COUNT(*) as c FROM applications").fetchone()["c"]
-
-    approved = conn.execute(
-        "SELECT COUNT(*) as c FROM applications WHERE decision='Approved'"
-    ).fetchone()["c"]
-
-    rejected = conn.execute(
-        "SELECT COUNT(*) as c FROM applications WHERE decision='Rejected'"
-    ).fetchone()["c"]
-
-    avg_risk = conn.execute(
-        "SELECT AVG(risk) as r FROM applications"
-    ).fetchone()["r"]
-
-    conn.close()
-
-    return jsonify({
-        "total": total,
-        "approved": approved,
-        "rejected": rejected,
-        "avg_risk": avg_risk or 0
-    })
+    return jsonify(explanation)
 
 
 # -----------------------------
@@ -352,6 +328,30 @@ def fairness():
     fairness_data = get_fairness_metrics()
 
     return jsonify(fairness_data)
+
+
+# -----------------------------
+# MODEL DRIFT MONITORING
+# -----------------------------
+@app.route("/drift")
+def drift():
+
+    if len(live_income_values) == 0:
+        return jsonify({
+            "training_income_avg": training_income_avg,
+            "live_income_avg": 0,
+            "drift_detected": False
+        })
+
+    live_avg = sum(live_income_values) / len(live_income_values)
+
+    drift = abs(live_avg - training_income_avg) > (0.3 * training_income_avg)
+
+    return jsonify({
+        "training_income_avg": training_income_avg,
+        "live_income_avg": round(live_avg,2),
+        "drift_detected": drift
+    })
 
 
 if __name__ == "__main__":
