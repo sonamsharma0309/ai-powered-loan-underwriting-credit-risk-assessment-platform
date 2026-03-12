@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
 
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -9,6 +10,8 @@ import RiskAnalytics from "./pages/RiskAnalytics";
 import LoanAssessment from "./pages/LoanAssessment";
 import Applications from "./pages/Applications";
 import AuditLogs from "./pages/AuditLogs";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 import MainLayout from "./layout/MainLayout";
 
@@ -42,6 +45,15 @@ function App() {
               path="/"
               element={
                 <AnimatedPage>
+                  <Landing />
+                </AnimatedPage>
+              }
+            />
+
+            <Route
+              path="/login"
+              element={
+                <AnimatedPage>
                   <Login />
                 </AnimatedPage>
               }
@@ -64,6 +76,11 @@ function App() {
 
         {token && (
           <Route path="/" element={<MainLayout />}>
+
+            <Route
+              index
+              element={<Navigate to="/dashboard" />}
+            />
 
             <Route
               path="dashboard"
@@ -106,6 +123,24 @@ function App() {
               element={
                 <AnimatedPage>
                   <AuditLogs />
+                </AnimatedPage>
+              }
+            />
+
+            <Route
+              path="profile"
+              element={
+                <AnimatedPage>
+                  <Profile />
+                </AnimatedPage>
+              }
+            />
+
+            <Route
+              path="settings"
+              element={
+                <AnimatedPage>
+                  <Settings />
                 </AnimatedPage>
               }
             />
