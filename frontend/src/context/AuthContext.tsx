@@ -6,9 +6,17 @@ import {
   useContext,
 } from "react";
 
+interface UserType {
+  name: string;
+  email: string;
+  role?: string;
+}
+
 interface AuthContextType {
   token: string | null;
+  user: UserType | null;
   setToken: (token: string | null) => void;
+  setUser: (user: UserType | null) => void;
   theme: "dark" | "light";
   toggleTheme: () => void;
 }
@@ -19,6 +27,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [token, setTokenState] = useState<string | null>(null);
 
+  const [user, setUserState] = useState<UserType | null>(null);
+
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   /* LOAD SAVED STATE */
@@ -28,6 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
       setTokenState(savedToken);
+    }
+
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      setUserState(JSON.parse(savedUser));
     }
 
     const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
@@ -74,6 +89,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setTokenState(newToken);
   };
 
+  /* USER HANDLING */
+
+  const setUser = (newUser: UserType | null) => {
+
+    if (newUser) {
+      localStorage.setItem("user", JSON.stringify(newUser));
+    } else {
+      localStorage.removeItem("user");
+    }
+
+    setUserState(newUser);
+  };
+
   /* THEME TOGGLE */
 
   const toggleTheme = () => {
@@ -83,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, setToken, theme, toggleTheme }}>
+    <AuthContext.Provider value={{ token, user, setToken, setUser, theme, toggleTheme }}>
       {children}
     </AuthContext.Provider>
   );

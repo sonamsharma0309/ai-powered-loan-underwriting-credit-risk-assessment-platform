@@ -9,7 +9,7 @@ import { auth, provider } from "../firebase"
 export default function Login(){
 
 const navigate = useNavigate()
-const { setToken } = useAuth()
+const { setToken, setUser } = useAuth()
 
 const [email,setEmail] = useState("")
 const [password,setPassword] = useState("")
@@ -42,6 +42,15 @@ const data = await res.json()
 if(data.success){
 
 setToken(data.token)
+
+/* SAVE USER */
+
+setUser({
+name: data.name || email.split("@")[0],
+email: email,
+role: "User"
+})
+
 navigate("/dashboard")
 
 }else{
@@ -77,6 +86,12 @@ const token = await user.getIdToken()
 
 setToken(token)
 
+setUser({
+name: user.displayName || "Google User",
+email: user.email || "",
+role: "User"
+})
+
 navigate("/dashboard")
 
 }catch(err){
@@ -93,47 +108,17 @@ return(
 
 <div className="min-h-screen flex items-center justify-center relative overflow-hidden text-white">
 
-{/* BACKGROUND */}
-
 <div className="absolute inset-0 -z-10 bg-[#020617]" />
 
-{/* Gradient blobs */}
+<div className="absolute w-[700px] h-[700px] bg-blue-500/40 blur-[160px] rounded-full top-[-100px] left-[-100px]" />
+<div className="absolute w-[700px] h-[700px] bg-purple-500/40 blur-[160px] rounded-full bottom-[-100px] right-[-100px]" />
 
-<div className="absolute w-[700px] h-[700px] bg-blue-500/40 blur-[160px] rounded-full animate-pulse top-[-100px] left-[-100px]" />
-
-<div className="absolute w-[700px] h-[700px] bg-purple-500/40 blur-[160px] rounded-full animate-pulse bottom-[-100px] right-[-100px]" />
-
-<div className="absolute w-[600px] h-[600px] bg-pink-500/30 blur-[140px] rounded-full animate-pulse top-[40%] left-[35%]" />
-
-
-{/* Floating particles */}
-
-<div className="absolute inset-0">
-
-{[...Array(35)].map((_,i)=>(
-<div
-key={i}
-className="absolute w-[3px] h-[3px] bg-white/40 rounded-full animate-ping"
-style={{
-top: `${Math.random()*100}%`,
-left: `${Math.random()*100}%`,
-animationDuration:`${2+Math.random()*3}s`
-}}
-/>
-))}
-
-</div>
-
-
-{/* LOGIN CARD */}
 
 <form
 onSubmit={handleLogin}
 className="relative bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-3xl w-[380px] space-y-6 shadow-[0_0_80px_rgba(139,92,246,0.35)]"
 >
 
-
-{/* TITLE */}
 
 <div className="text-center">
 
@@ -148,8 +133,6 @@ AI Powered Credit Risk Platform
 </div>
 
 
-{/* ERROR */}
-
 {error && (
 
 <p className="text-red-400 text-sm text-center">
@@ -158,8 +141,6 @@ AI Powered Credit Risk Platform
 
 )}
 
-
-{/* EMAIL */}
 
 <div className="relative">
 
@@ -176,8 +157,6 @@ required
 
 </div>
 
-
-{/* PASSWORD */}
 
 <div className="relative">
 
@@ -204,8 +183,6 @@ className="absolute right-3 top-3 cursor-pointer text-gray-400"
 </div>
 
 
-{/* LOGIN BUTTON */}
-
 <button
 type="submit"
 className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition p-3 rounded-xl font-semibold"
@@ -215,8 +192,6 @@ className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purp
 
 </button>
 
-
-{/* DIVIDER */}
 
 <div className="flex items-center gap-3 text-gray-500 text-sm">
 
@@ -228,8 +203,6 @@ OR
 
 </div>
 
-
-{/* GOOGLE LOGIN */}
 
 <button
 type="button"
@@ -246,8 +219,6 @@ Continue with Google
 
 </button>
 
-
-{/* REGISTER */}
 
 <p className="text-center text-gray-400 text-sm">
 
@@ -269,4 +240,5 @@ Register
 </div>
 
 )
+
 }
