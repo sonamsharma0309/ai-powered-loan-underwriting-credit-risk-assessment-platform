@@ -22,7 +22,7 @@ const [explanation,setExplanation]=useState<string[]>([])
 const [loading,setLoading]=useState(false)
 const [error,setError]=useState("")
 
-const API="https://ai-powered-loan-underwriting-credit-risk-3at2.onrender.com"
+const API="http://127.0.0.1:5000"
 
 
 const handleChange=(e:any)=>{
@@ -48,13 +48,14 @@ headers:{
 body:JSON.stringify(form)
 })
 
+if(!res.ok){
+throw new Error("Prediction failed")
+}
+
 const data=await res.json()
 
-console.log("Predict:",data)
-
-setRisk(data.risk_score || 0)
+setRisk(Math.round(data.risk_score || 0))
 setDecision(data.decision || "Rejected")
-
 
 const exp=await fetch(`${API}/explain`,{
 method:"POST",
@@ -64,9 +65,11 @@ headers:{
 body:JSON.stringify(form)
 })
 
-const expData=await exp.json()
+if(!exp.ok){
+throw new Error("Explain API failed")
+}
 
-console.log("Explain:",expData)
+const expData=await exp.json()
 
 setExplanation(expData.reasons || [])
 
@@ -82,6 +85,18 @@ setLoading(false)
 }
 
 
+const riskLevel = ()=>{
+if(risk<40) return "Low Risk"
+if(risk<70) return "Medium Risk"
+return "High Risk"
+}
+
+const riskColor = ()=>{
+if(risk<40) return "text-green-400"
+if(risk<70) return "text-yellow-400"
+return "text-red-400"
+}
+
 
 return(
 
@@ -89,7 +104,7 @@ return(
 
 {/* LEFT PANEL */}
 
-<div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+<div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl">
 
 <h2 className="text-2xl font-semibold mb-6">
 Applicant Details
@@ -99,48 +114,48 @@ Applicant Details
 name="name"
 placeholder="Full Name"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <input
 name="age"
 placeholder="Age"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <input
 name="income"
 placeholder="Annual Income"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <input
 name="loanAmount"
 placeholder="Loan Amount"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <input
 name="employmentYears"
 placeholder="Employment Years"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <input
 name="interestRate"
 placeholder="Interest Rate (%)"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600 focus:border-purple-500 outline-none"
 />
 
 <select
 name="homeOwnership"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600"
 >
 <option value="">Home Ownership</option>
 <option value="rent">Rent</option>
@@ -151,7 +166,7 @@ className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slat
 <select
 name="loanIntent"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600"
 >
 <option value="">Loan Intent</option>
 <option value="education">Education</option>
@@ -163,7 +178,7 @@ className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slat
 <select
 name="loanGrade"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600"
 >
 <option value="">Loan Grade</option>
 <option value="A">A</option>
@@ -175,7 +190,7 @@ className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slat
 <select
 name="previousDefault"
 onChange={handleChange}
-className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slate-600"
+className="w-full mb-4 p-3 rounded-lg bg-slate-800 border border-slate-600"
 >
 <option value="">Previous Default</option>
 <option value="0">No</option>
@@ -186,7 +201,7 @@ className="w-full mb-4 p-3 rounded-lg bg-slate-800 text-white border border-slat
 <button
 onClick={runAssessment}
 disabled={loading}
-className="bg-purple-600 hover:bg-purple-700 transition w-full p-3 rounded-lg mt-2 font-semibold"
+className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:scale-[1.02] transition-all w-full p-3 rounded-lg mt-2 font-semibold"
 >
 
 {loading ? "Running AI Model..." : "Run AI Assessment"}
@@ -203,13 +218,24 @@ className="bg-purple-600 hover:bg-purple-700 transition w-full p-3 rounded-lg mt
 
 {/* RIGHT PANEL */}
 
-<div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+<div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl">
 
-<h2 className="text-2xl font-semibold mb-6">
+<div className="flex items-center justify-between">
+
+<h2 className="text-2xl font-semibold">
 AI Risk Result
 </h2>
 
+<span className="text-xs text-gray-400">
+Generated by ML Risk Model
+</span>
+
+</div>
+
+
+<div className="mt-6 flex justify-center">
 <RiskGauge score={risk}/>
+</div>
 
 
 <div className="mt-8 text-center">
@@ -226,8 +252,14 @@ ${decision==="Approved"
 
 </div>
 
+<p className={`mt-3 text-sm ${riskColor()}`}>
+{riskLevel()}
+</p>
+
 </div>
 
+
+{/* RISK BAR */}
 
 <div className="mt-8">
 
@@ -236,10 +268,10 @@ ${decision==="Approved"
 <span>{risk}%</span>
 </div>
 
-<div className="w-full h-3 bg-slate-700 rounded-full mt-2">
+<div className="w-full h-3 bg-slate-700 rounded-full mt-2 overflow-hidden">
 
 <div
-className={`h-3 rounded-full
+className={`h-3 rounded-full transition-all duration-700
 ${risk < 40 ? "bg-green-400" : risk < 70 ? "bg-yellow-400" : "bg-red-500"}
 `}
 style={{width:`${risk}%`}}
@@ -250,28 +282,38 @@ style={{width:`${risk}%`}}
 </div>
 
 
-<div className="mt-8">
+{/* AI EXPLANATION */}
 
-<h3 className="font-semibold mb-3 text-lg">
-AI Explanation
+<div className="mt-10">
+
+<h3 className="font-semibold mb-4 text-lg">
+AI Explainability
 </h3>
-
-<ul className="space-y-2 text-gray-300">
 
 {explanation.length===0 && (
 <p className="text-gray-500">Run assessment to see AI reasoning</p>
 )}
 
+<div className="space-y-3">
+
 {explanation.map((r,i)=>(
-<li
+
+<div
 key={i}
-className="bg-slate-800 border border-slate-700 rounded-lg p-3"
+className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex items-center justify-between"
 >
-{r}
-</li>
+
+<span>{r}</span>
+
+<span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-400">
+Factor
+</span>
+
+</div>
+
 ))}
 
-</ul>
+</div>
 
 </div>
 
